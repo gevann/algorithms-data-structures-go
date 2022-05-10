@@ -30,3 +30,7 @@ func TwoThreeNode[T any](init *T) *twoThreeNode[T] {
 		parent:      nil,
 	}
 }
+
+func isLeaf[T any](node twoThreeNode[T]) bool {
+	return node.firstChild == nil && node.secondChild == nil && node.thirdChild == nil
+}
