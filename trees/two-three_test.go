@@ -185,16 +185,19 @@ func (node *twoThreeNode[int]) setSecondData(i int) *twoThreeNode[int] {
 
 func (node *twoThreeNode[int]) setFirstChild(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.firstChild = child
+	child.parent = node
 	return node
 }
 
 func (node *twoThreeNode[int]) setSecondChild(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.secondChild = child
+	child.parent = node
 	return node
 }
 
 func (node *twoThreeNode[int]) setThirdChild(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.thirdChild = child
+	child.parent = node
 	return node
 }
 

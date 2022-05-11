@@ -2,6 +2,9 @@ package trees
 
 import (
 	"errors"
+	"fmt"
+	"math/big"
+	"strconv"
 )
 
 /* TwoThreeTree is a binary search tree where each node has either:
@@ -152,4 +155,75 @@ func Insert[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
 		insertIntoSingleDatumNode(node, value)
 	}
 	return node
+}
+
+type queueElement[T any] struct {
+	node  *twoThreeNode[T]
+	level int
+}
+
+// reference converts the node's hex-string address to a base 62 string.
+// It returns the base 62 string.
+func reference[T any](node *twoThreeNode[T]) string {
+	hexAddress := fmt.Sprintf("%p", node)
+	i, _ := strconv.ParseInt(hexAddress[2:], 16, 64)
+	return big.NewInt(i).Text(62)
+}
+
+// ToString returns a string representation of the given twoThreeNode.
+// It includes the reference to the parent node, if any, and the reference to itself if it is not a leaf.
+// Returns a string where the references are base 62 numbers of the nodes' memory addresses.
+func ToString[T any](node *twoThreeNode[T]) string {
+	fd, sd, parentRef, ref := "_", "_", "", ""
+
+	if !isLeaf(*node) {
+		ref = fmt.Sprintf("@<%v>", reference(node))
+	}
+
+	if node.parent != nil {
+		parentRef = fmt.Sprintf(" (parent: %s)", reference(node.parent))
+	}
+
+	if node.firstData != nil {
+		fd = fmt.Sprintf("%v", *node.firstData)
+	}
+	if node.secondData != nil {
+		sd = fmt.Sprintf("%v", *node.secondData)
+	}
+	return fmt.Sprintf("{%v[%v, %v]%v}\t", ref, fd, sd, parentRef)
+}
+
+// Print traverses the tree in breadth-first order.
+// It returns the string representation of the tree.
+func Print[T any](node *twoThreeNode[T]) string {
+	var queue []queueElement[T]
+	var str string = "\n0:\t"
+	queue = append(queue, queueElement[T]{node, 0})
+	highestLevel := 0
+
+	dataStr := func(elem queueElement[T]) string {
+		start := ""
+		if elem.level > highestLevel {
+			highestLevel = elem.level
+			start = fmt.Sprintf("\n%d:\t", elem.level)
+		}
+		return fmt.Sprintf("%v%s\t", start, ToString(elem.node))
+	}
+
+	for len(queue) > 0 {
+		elem := queue[0]
+		queue = queue[1:]
+		str += fmt.Sprintf("%v", dataStr(elem))
+		nextLevel := elem.level + 1
+		if elem.node.firstChild != nil {
+			queue = append(queue, queueElement[T]{elem.node.firstChild, nextLevel})
+		}
+		if elem.node.secondChild != nil {
+			queue = append(queue, queueElement[T]{elem.node.secondChild, nextLevel})
+		}
+		if elem.node.thirdChild != nil {
+			queue = append(queue, queueElement[T]{elem.node.thirdChild, nextLevel})
+		}
+	}
+	return str
 }
