@@ -136,6 +136,51 @@ func datumCount[T any](node *twoThreeNode[T]) int {
 	return count
 }
 
+// sortData returns the data of a node and a given value, sorted in ascending order.
+// It returns the sorted data
+func sortData[T any](node *twoThreeNode[T], value T) (*T, *T, *T) {
+	if node.comparator(value, *node.firstData) <= 0 {
+		return &value, node.firstData, node.secondData
+	}
+	if node.comparator(value, *node.secondData) <= 0 {
+		return node.firstData, &value, node.secondData
+	}
+	return node.firstData, node.secondData, &value
+}
+
+// insertIntoFullNode inserts a value into a full node, when the parent node is not full.
+// It returns the parent node.
+func insertIntoFullNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
+	min, mid, max := sortData(node, value)
+	parent := node.parent
+
+	insertIntoSingleDatumNode(parent, *mid)
+
+	node.firstData = min
+	node.secondData = nil
+
+	nodePrime := twoThreeNode[T]{
+		firstData:   max,
+		secondData:  nil,
+		firstChild:  nil,
+		secondChild: nil,
+		thirdChild:  nil,
+		parent:      parent,
+		comparator:  node.comparator,
+	}
+
+	// if node is the firstChild of its parent:
+	// - set nodePrime as the secondChild of the parent and
+	// - set secondChild of node as the thirdChild of the parent
+	if node.parent.firstChild == node {
+		secondChild := node.parent.secondChild
+		node.parent.thirdChild = secondChild
+		node.parent.secondChild = &nodePrime
+	}
+
+	return parent
+}
+
 // insertIntoSingleDatumNode inserts a value into a single-datum node.
 // It returns node after inserting the value.
 func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
@@ -149,12 +194,21 @@ func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeN
 }
 
 // Insert inserts a value into the tree.
+// Note that the root of the tree may be modified by this operation.
 // It returns the root node of the tree.
-func Insert[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
+func Insert[T any](root *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
+	node, err := findLeaf(*root, value)
+	if err != nil {
+		goto EXIT_ERROR
+	}
+
 	if datumCount(node) == 1 {
 		insertIntoSingleDatumNode(node, value)
+		return root, nil
 	}
-	return node
+	return node, nil
+EXIT_ERROR:
+	return nil, err
 }
 
 type queueElement[T any] struct {

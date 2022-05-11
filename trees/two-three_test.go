@@ -2,6 +2,7 @@ package trees
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -215,6 +216,44 @@ func (node *twoThreeNode[string]) equals(other *twoThreeNode[string]) bool {
 		node.thirdChild == other.thirdChild
 }
 
+func bfsEquals(root *twoThreeNode[int], other *twoThreeNode[int]) (bool, string) {
+	queue := []*twoThreeNode[int]{root}
+	otherQueue := []*twoThreeNode[int]{other}
+	for len(queue) > 0 && len(otherQueue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		otherNode := otherQueue[0]
+		otherQueue = otherQueue[1:]
+
+		safeDeref := func(ptr *int) int {
+			if ptr == nil {
+				return 0
+			}
+			return *ptr
+		}
+
+		if !(safeDeref(node.firstData) == safeDeref(otherNode.firstData)) {
+			return false, fmt.Sprintf("%v != %v", *node.firstData, *otherNode.firstData)
+		}
+		if !(safeDeref(node.secondData) == safeDeref(otherNode.secondData)) {
+			return false, fmt.Sprintf("%v != %v", *node.secondData, *otherNode.secondData)
+		}
+		if node.firstChild != nil {
+			queue = append(queue, node.firstChild)
+			otherQueue = append(otherQueue, otherNode.firstChild)
+		}
+		if node.secondChild != nil {
+			queue = append(queue, node.secondChild)
+			otherQueue = append(otherQueue, otherNode.secondChild)
+		}
+		if node.thirdChild != nil {
+			queue = append(queue, node.thirdChild)
+			otherQueue = append(otherQueue, otherNode.thirdChild)
+		}
+	}
+	return true, ""
+}
+
 func (node *twoThreeNode[int]) toString() string {
 	var firstData int
 	var secondData int
@@ -330,6 +369,118 @@ func Test_insertIntoSingleDatumNode(t *testing.T) {
 
 			if !(gotFirstData == wantFirstData && gotSecondData == wantSecondData) {
 				t.Errorf("insertIntoSingleDatumNode() = %v, want %v", got.toString(), tt.want.toString())
+			}
+		})
+	}
+}
+
+func Test_sortData(t *testing.T) {
+	type args struct {
+		node  *twoThreeNode[int]
+		value int
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		want1 int
+		want2 int
+	}{
+		{
+			name: "Returns [firstData, secondData, value] when value is greater than secondData",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				value: 3,
+			},
+			want:  1,
+			want1: 2,
+			want2: 3,
+		},
+		{
+			name: "Returns [firstData, value, secondData] when value is greater than firstData and less than secondData",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1).setSecondData(3),
+				value: 2,
+			},
+			want:  1,
+			want1: 2,
+			want2: 3,
+		},
+		{
+			name: "Returns [value, firstData, secondData] when value is less than firstData",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				value: 0,
+			},
+			want:  0,
+			want1: 1,
+			want2: 2,
+		},
+		{
+			name: "Returns [value, firstData, secondData] when value equal to firstData",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				value: 1,
+			},
+			want:  1,
+			want1: 1,
+			want2: 2,
+		},
+		{
+			name: "Returns [firstData, value, secondData] when value equal to secondData",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				value: 2,
+			},
+			want:  1,
+			want1: 2,
+			want2: 2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ref1, ref2, ref3 := sortData(tt.args.node, tt.args.value)
+			got, got1, got2 := *ref1, *ref2, *ref3
+			if !reflect.DeepEqual([]int{got, got1, got2}, []int{tt.want, tt.want1, tt.want2}) {
+				t.Errorf("sortData() = %v, want %v", []int{got, got1, got2}, []int{tt.want, tt.want1, tt.want2})
+			}
+		})
+	}
+}
+
+func Test_insertIntoFullNode(t *testing.T) {
+	leafWithOneAndFive := twoThreeNodeInt().setFirstData(1).setSecondData(5)
+	leafWithNine := twoThreeNodeInt().setFirstData(9)
+	_ = twoThreeNodeInt().setFirstData(7).setFirstChild(leafWithOneAndFive).setSecondChild(leafWithNine)
+
+	expectedLeafWithFive := twoThreeNodeInt().setFirstData(5)
+	expectedLeafWithOne := twoThreeNodeInt().setFirstData(1)
+	expectedLeafWithNine := twoThreeNodeInt().setFirstData(9)
+	expectedTree := twoThreeNodeInt().setFirstData(4).setSecondData(7).setFirstChild(expectedLeafWithOne).setSecondChild(expectedLeafWithFive).setThirdChild(expectedLeafWithNine)
+
+	type args struct {
+		value int
+	}
+	tests := []struct {
+		name string
+		args args
+		want *twoThreeNode[int]
+	}{
+		{
+			name: "Inserts the value into the tree",
+			args: args{
+				value: 4,
+			},
+			want: expectedTree,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := insertIntoFullNode(leafWithOneAndFive, tt.args.value)
+			matched, message := bfsEquals(got, expectedTree)
+			if !matched {
+				t.Errorf("insertIntoFullNode() mismatch: %v", message)
+				t.Errorf("got = %v", Print(got))
 			}
 		})
 	}
