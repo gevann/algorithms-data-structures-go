@@ -265,3 +265,69 @@ func Test_findLeaf(t *testing.T) {
 		})
 	}
 }
+
+func Test_datumCount(t *testing.T) {
+	type args struct {
+		node *twoThreeNode[int]
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Returns the correct number of datums",
+			args: args{
+				node: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+			},
+			want: 2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := datumCount(tt.args.node); got != tt.want {
+				t.Errorf("datumCount() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_insertIntoSingleDatumNode(t *testing.T) {
+	type args struct {
+		node  *twoThreeNode[int]
+		value int
+	}
+	tests := []struct {
+		name string
+		args args
+		want *twoThreeNode[int]
+	}{
+		{
+			name: "Inserts the value into the node",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(1),
+				value: 2,
+			},
+			want: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+		},
+		{
+			name: "Reorders the data if the value being inserted is less than the first data",
+			args: args{
+				node:  twoThreeNodeInt().setFirstData(2),
+				value: 1,
+			},
+			want: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := insertIntoSingleDatumNode(tt.args.node, tt.args.value)
+			gotFirstData, gotSecondData := *got.firstData, *got.secondData
+			wantFirstData, wantSecondData := *tt.want.firstData, *tt.want.secondData
+
+			if !(gotFirstData == wantFirstData && gotSecondData == wantSecondData) {
+				t.Errorf("insertIntoSingleDatumNode() = %v, want %v", got.toString(), tt.want.toString())
+			}
+		})
+	}
+}

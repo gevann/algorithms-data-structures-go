@@ -121,3 +121,35 @@ func findLeaf[T any](node twoThreeNode[T], value T) (*twoThreeNode[T], error) {
 
 	return nil, errors.New("Unknown node type")
 }
+
+// datumCount returns the number of data values in the given twoThreeNode.
+func datumCount[T any](node *twoThreeNode[T]) int {
+	count := 0
+	for _, datum := range []*T{node.firstData, node.secondData} {
+		if datum != nil {
+			count++
+		}
+	}
+	return count
+}
+
+// insertIntoSingleDatumNode inserts a value into a single-datum node.
+// It returns node after inserting the value.
+func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
+	if node.comparator(value, *node.firstData) < 0 {
+		node.secondData = node.firstData
+		node.firstData = &value
+	} else {
+		node.secondData = &value
+	}
+	return node
+}
+
+// Insert inserts a value into the tree.
+// It returns the root node of the tree.
+func Insert[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
+	if datumCount(node) == 1 {
+		insertIntoSingleDatumNode(node, value)
+	}
+	return node
+}
