@@ -174,35 +174,35 @@ func Test_nodeType(t *testing.T) {
 	}
 }
 
-func (node *twoThreeNode[int]) setFirstData(i int) *twoThreeNode[int] {
+func (node *twoThreeNode[int]) setFD(i int) *twoThreeNode[int] {
 	node.firstData = &i
 	return node
 }
 
-func (node *twoThreeNode[int]) setSecondData(i int) *twoThreeNode[int] {
+func (node *twoThreeNode[int]) setSD(i int) *twoThreeNode[int] {
 	node.secondData = &i
 	return node
 }
 
-func (node *twoThreeNode[int]) setFirstChild(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *twoThreeNode[int]) setFC(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.firstChild = child
 	child.parent = node
 	return node
 }
 
-func (node *twoThreeNode[int]) setSecondChild(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *twoThreeNode[int]) setSC(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.secondChild = child
 	child.parent = node
 	return node
 }
 
-func (node *twoThreeNode[int]) setThirdChild(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *twoThreeNode[int]) setTC(child *twoThreeNode[int]) *twoThreeNode[int] {
 	node.thirdChild = child
 	child.parent = node
 	return node
 }
 
-func twoThreeNodeInt() *twoThreeNode[int] {
+func ttni() *twoThreeNode[int] {
 	return &twoThreeNode[int]{
 		comparator: intComparator,
 	}
@@ -217,41 +217,40 @@ func (node *twoThreeNode[string]) equals(other *twoThreeNode[string]) bool {
 }
 
 func bfsEquals(root *twoThreeNode[int], other *twoThreeNode[int]) (bool, string) {
+	rootData := bfs(root)
+	otherData := bfs(other)
+
+	if len(rootData) != len(otherData) {
+		return false, "Lengths don't match"
+	}
+
+	for idx, value := range rootData {
+		if otherValue := otherData[idx]; value != otherValue {
+			return false, fmt.Sprintf("Values at index %d don't match: %d != %d", idx, value, otherValue)
+		}
+	}
+
+	return true, ""
+}
+
+func bfs(root *twoThreeNode[int]) []int {
 	queue := []*twoThreeNode[int]{root}
-	otherQueue := []*twoThreeNode[int]{other}
-	for len(queue) > 0 && len(otherQueue) > 0 {
+	var result []int
+	for len(queue) > 0 {
 		node := queue[0]
 		queue = queue[1:]
-		otherNode := otherQueue[0]
-		otherQueue = otherQueue[1:]
-
-		safeDeref := func(ptr *int) int {
-			if ptr == nil {
-				return 0
-			}
-			return *ptr
-		}
-
-		if !(safeDeref(node.firstData) == safeDeref(otherNode.firstData)) {
-			return false, fmt.Sprintf("%v != %v", *node.firstData, *otherNode.firstData)
-		}
-		if !(safeDeref(node.secondData) == safeDeref(otherNode.secondData)) {
-			return false, fmt.Sprintf("%v != %v", *node.secondData, *otherNode.secondData)
-		}
+		result = append(result, *node.firstData)
 		if node.firstChild != nil {
 			queue = append(queue, node.firstChild)
-			otherQueue = append(otherQueue, otherNode.firstChild)
 		}
 		if node.secondChild != nil {
 			queue = append(queue, node.secondChild)
-			otherQueue = append(otherQueue, otherNode.secondChild)
 		}
 		if node.thirdChild != nil {
 			queue = append(queue, node.thirdChild)
-			otherQueue = append(otherQueue, otherNode.thirdChild)
 		}
 	}
-	return true, ""
+	return result
 }
 
 func (node *twoThreeNode[int]) toString() string {
@@ -272,19 +271,19 @@ func Test_findLeaf(t *testing.T) {
 		value int
 	}
 
-	leafWithNine := twoThreeNodeInt().setFirstData(9)
-	leafWithSix := twoThreeNodeInt().setFirstData(6)
-	leafWithTwelve := twoThreeNodeInt().setFirstData(12)
-	leafWithOneAndThree := twoThreeNodeInt().setFirstData(1).setSecondData(3)
+	leafWithNine := ttni().setFD(9)
+	leafWithSix := ttni().setFD(6)
+	leafWithTwelve := ttni().setFD(12)
+	leafWithOneAndThree := ttni().setFD(1).setSD(3)
 
-	threeNodeWithSevenAndEleven := twoThreeNodeInt()
-	threeNodeWithSevenAndEleven.setFirstData(7).setSecondData(11)
-	threeNodeWithSevenAndEleven.setFirstChild(leafWithSix).setSecondChild(leafWithNine).setThirdChild(leafWithTwelve)
+	threeNodeWithSevenAndEleven := ttni()
+	threeNodeWithSevenAndEleven.setFD(7).setSD(11)
+	threeNodeWithSevenAndEleven.setFC(leafWithSix).setSC(leafWithNine).setTC(leafWithTwelve)
 
-	tree := twoThreeNodeInt().
-		setFirstData(4)
-	tree.setFirstChild(leafWithOneAndThree).
-		setSecondChild(threeNodeWithSevenAndEleven)
+	tree := ttni().
+		setFD(4)
+	tree.setFC(leafWithOneAndThree).
+		setSC(threeNodeWithSevenAndEleven)
 
 	tests := []struct {
 		name string
@@ -301,7 +300,7 @@ func Test_findLeaf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, err := findLeaf(*tree, tt.args.value); !(got.equals(tt.want)) {
+			if got, err := findLeaf(tree, tt.args.value); !(got.equals(tt.want)) {
 				t.Errorf("findLeaf() = %v, want %v. Error: %v", got.toString(), tt.want.toString(), err)
 			}
 		})
@@ -320,7 +319,7 @@ func Test_datumCount(t *testing.T) {
 		{
 			name: "Returns the correct number of datums",
 			args: args{
-				node: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				node: ttni().setFD(1).setSD(2),
 			},
 			want: 2,
 		},
@@ -347,18 +346,18 @@ func Test_insertIntoSingleDatumNode(t *testing.T) {
 		{
 			name: "Inserts the value into the node",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1),
+				node:  ttni().setFD(1),
 				value: 2,
 			},
-			want: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+			want: ttni().setFD(1).setSD(2),
 		},
 		{
 			name: "Reorders the data if the value being inserted is less than the first data",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(2),
+				node:  ttni().setFD(2),
 				value: 1,
 			},
-			want: twoThreeNodeInt().setFirstData(1).setSecondData(2),
+			want: ttni().setFD(1).setSD(2),
 		},
 	}
 	for _, tt := range tests {
@@ -389,7 +388,7 @@ func Test_sortData(t *testing.T) {
 		{
 			name: "Returns [firstData, secondData, value] when value is greater than secondData",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				node:  ttni().setFD(1).setSD(2),
 				value: 3,
 			},
 			want:  1,
@@ -399,7 +398,7 @@ func Test_sortData(t *testing.T) {
 		{
 			name: "Returns [firstData, value, secondData] when value is greater than firstData and less than secondData",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1).setSecondData(3),
+				node:  ttni().setFD(1).setSD(3),
 				value: 2,
 			},
 			want:  1,
@@ -409,7 +408,7 @@ func Test_sortData(t *testing.T) {
 		{
 			name: "Returns [value, firstData, secondData] when value is less than firstData",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				node:  ttni().setFD(1).setSD(2),
 				value: 0,
 			},
 			want:  0,
@@ -419,7 +418,7 @@ func Test_sortData(t *testing.T) {
 		{
 			name: "Returns [value, firstData, secondData] when value equal to firstData",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				node:  ttni().setFD(1).setSD(2),
 				value: 1,
 			},
 			want:  1,
@@ -429,7 +428,7 @@ func Test_sortData(t *testing.T) {
 		{
 			name: "Returns [firstData, value, secondData] when value equal to secondData",
 			args: args{
-				node:  twoThreeNodeInt().setFirstData(1).setSecondData(2),
+				node:  ttni().setFD(1).setSD(2),
 				value: 2,
 			},
 			want:  1,
@@ -449,14 +448,14 @@ func Test_sortData(t *testing.T) {
 }
 
 func Test_insertIntoFullNode(t *testing.T) {
-	leafWithOneAndFive := twoThreeNodeInt().setFirstData(1).setSecondData(5)
-	leafWithNine := twoThreeNodeInt().setFirstData(9)
-	_ = twoThreeNodeInt().setFirstData(7).setFirstChild(leafWithOneAndFive).setSecondChild(leafWithNine)
+	leafWithOneAndFive := ttni().setFD(1).setSD(5)
+	leafWithNine := ttni().setFD(9)
+	_ = ttni().setFD(7).setFC(leafWithOneAndFive).setSC(leafWithNine)
 
-	expectedLeafWithFive := twoThreeNodeInt().setFirstData(5)
-	expectedLeafWithOne := twoThreeNodeInt().setFirstData(1)
-	expectedLeafWithNine := twoThreeNodeInt().setFirstData(9)
-	expectedTree := twoThreeNodeInt().setFirstData(4).setSecondData(7).setFirstChild(expectedLeafWithOne).setSecondChild(expectedLeafWithFive).setThirdChild(expectedLeafWithNine)
+	expectedLeafWithFive := ttni().setFD(5)
+	expectedLeafWithOne := ttni().setFD(1)
+	expectedLeafWithNine := ttni().setFD(9)
+	expectedTree := ttni().setFD(4).setSD(7).setFC(expectedLeafWithOne).setSC(expectedLeafWithFive).setTC(expectedLeafWithNine)
 
 	type args struct {
 		value int
@@ -481,6 +480,133 @@ func Test_insertIntoFullNode(t *testing.T) {
 			if !matched {
 				t.Errorf("insertIntoFullNode() mismatch: %v", message)
 				t.Errorf("got = %v", Print(got))
+			}
+		})
+	}
+}
+
+func TestInsert(t *testing.T) {
+	type args struct {
+		root  *twoThreeNode[int]
+		value int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *twoThreeNode[int]
+		wantErr bool
+	}{
+		{
+			name: "It inserts into the node when it is the root and has room",
+			args: args{
+				root:  ttni().setFD(1),
+				value: 2,
+			},
+			want:    ttni().setFD(1).setSD(2),
+			wantErr: false,
+		},
+		{
+			name: "It splits the node when it is the root and has no room",
+			args: args{
+				root:  ttni().setFD(1).setSD(2),
+				value: 3,
+			},
+			want:    ttni().setFD(2).setFC(ttni().setFD(1)).setSC(ttni().setFD(3)),
+			wantErr: false,
+		},
+		{
+			name: "It splits the first child correctly, and returns the root",
+			args: args{
+				root:  ttni().setFD(10).setFC(ttni().setFD(5).setSD(7)).setSC(ttni().setFD(15)),
+				value: 8,
+			},
+			want:    ttni().setFD(7).setSD(10).setFC(ttni().setFD(5)).setSC(ttni().setFD(8)).setTC(ttni().setFD(15)),
+			wantErr: false,
+		},
+		{
+			name: "It splits the second child correctly, and returns the root",
+			args: args{
+				root:  ttni().setFD(10).setFC(ttni().setFD(5).setSD(7)).setSC(ttni().setFD(15).setSD(20)),
+				value: 25,
+			},
+			want:    ttni().setFD(10).setSD(20).setFC(ttni().setFD(5).setSD(7)).setSC(ttni().setFD(15)).setTC(ttni().setFD(25)),
+			wantErr: false,
+		},
+		{
+
+			name: "It splits the root correctly when the leaf and root were both full",
+			args: args{
+				root:  ttni().setFD(10).setSD(20).setFC(ttni().setFD(5).setSD(7)).setSC(ttni().setFD(15)).setTC(ttni().setFD(25)),
+				value: 8,
+			},
+			want:    ttni().setFD(10).setFC(ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))).setSC(ttni().setFD(20).setFC(ttni().setFD(15)).setSC(ttni().setFD(25))),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Insert(tt.args.root, tt.args.value)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Insert() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			matched, message := bfsEquals(got, tt.want)
+
+			if !matched {
+				t.Errorf("Insert() mismatch: %v", message)
+				t.Errorf("\nGOT:%v\n\nWANT:%v\n", Print(got), Print(tt.want))
+			}
+
+			if err != nil != tt.wantErr {
+				t.Errorf("Insert() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_sortChildren(t *testing.T) {
+	type args struct {
+		a *twoThreeNode[int]
+		b *twoThreeNode[int]
+		c *twoThreeNode[int]
+		d *twoThreeNode[int]
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		want1 int
+		want2 int
+		want3 int
+	}{
+		{
+			name: "It sorts the children correctly",
+			args: args{
+				a: ttni().setFD(4),
+				b: ttni().setFD(2),
+				c: ttni().setFD(3),
+				d: ttni().setFD(1),
+			},
+			want:  1,
+			want1: 2,
+			want2: 3,
+			want3: 4,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, got2, got3 := sortChildren(tt.args.a, tt.args.b, tt.args.c, tt.args.d)
+			if *got.firstData != tt.want {
+				t.Errorf("sortChildren() got = %v, want %v", got.firstData, tt.want)
+			}
+			if *got1.firstData != tt.want1 {
+				t.Errorf("sortChildren() got1 = %v, want %v", got1.firstData, tt.want1)
+			}
+			if *got2.firstData != tt.want2 {
+				t.Errorf("sortChildren() got2 = %v, want %v", got2.firstData, tt.want2)
+			}
+			if *got3.firstData != tt.want3 {
+				t.Errorf("sortChildren() got3 = %v, want %v", got3.firstData, tt.want3)
 			}
 		})
 	}

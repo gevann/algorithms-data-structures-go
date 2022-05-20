@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 )
 
@@ -94,12 +95,12 @@ func nodeType[T any](node twoThreeNode[T]) (int, error) {
 // findLeaf locates the leaf node of the given twoThreeTree within which the value should be inserted.
 // It returns the leaf node at which the value should be inserted.
 // If no leaf node exists, it returns nil.
-func findLeaf[T any](node twoThreeNode[T], value T) (*twoThreeNode[T], error) {
-	if isLeaf(node) {
-		return &node, nil
+func findLeaf[T any](node *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
+	if isLeaf(*node) {
+		return node, nil
 	}
 
-	nt, err := nodeType(node)
+	nt, err := nodeType(*node)
 
 	if err != nil {
 		return nil, err
@@ -108,17 +109,17 @@ func findLeaf[T any](node twoThreeNode[T], value T) (*twoThreeNode[T], error) {
 	switch nt {
 	case twoNode:
 		if node.comparator(value, *node.firstData) < 0 {
-			return findLeaf(*node.firstChild, value)
+			return findLeaf(node.firstChild, value)
 		} else {
-			return findLeaf(*node.secondChild, value)
+			return findLeaf(node.secondChild, value)
 		}
 	case threeNode:
 		if node.comparator(value, *node.firstData) < 0 {
-			return findLeaf(*node.firstChild, value)
+			return findLeaf(node.firstChild, value)
 		} else if node.comparator(value, *node.secondData) < 0 {
-			return findLeaf(*node.secondChild, value)
+			return findLeaf(node.secondChild, value)
 		} else {
-			return findLeaf(*node.thirdChild, value)
+			return findLeaf(node.thirdChild, value)
 		}
 	}
 
@@ -146,6 +147,23 @@ func sortData[T any](node *twoThreeNode[T], value T) (*T, *T, *T) {
 		return node.firstData, &value, node.secondData
 	}
 	return node.firstData, node.secondData, &value
+}
+
+// sortChildren sorts 4 nodes into ascending order, based on the first data value.
+// It returns the sorted children.
+func sortChildren[T any](a, b, c, d *twoThreeNode[T]) (*twoThreeNode[T], *twoThreeNode[T], *twoThreeNode[T], *twoThreeNode[T]) {
+
+	comparator := a.comparator
+
+	//create a slice of the children
+	children := []*twoThreeNode[T]{a, b, c, d}
+
+	sort.Slice(children, func(i, j int) bool {
+		childI, childJ := children[i], children[j]
+		return comparator(*childI.firstData, *childJ.firstData) < 0
+	})
+
+	return children[0], children[1], children[2], children[3]
 }
 
 // insertIntoFullNode inserts a value into a full node, when the parent node is not full.
@@ -181,6 +199,138 @@ func insertIntoFullNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] 
 	return parent
 }
 
+func findRoot[T any](node *twoThreeNode[T]) *twoThreeNode[T] {
+	if node.parent == nil {
+		return node
+	}
+	return findRoot(node.parent)
+}
+
+// rebalance rebalances the tree after a node has been inserted.
+// It recurses up the tree until it finds a node that is not full, or the root node.
+// It returns the new root of the tree.
+func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode[T]) *twoThreeNode[T] {
+	finalSplit := node.parent == nil || datumCount(node.parent) == 1
+
+	if datumCount(node) == 1 {
+		insertIntoSingleDatumNode(node, value)
+		return findRoot(node)
+	}
+
+	// node cannot be split, so recurse up the tree
+	min, mid, max := sortData(node, value)
+	parent := node.parent
+
+	// We can split this node.
+	// it:
+	// - has two data values
+	// - is the root node, or
+	// - its parent has only one data value
+	node.firstData = min
+	node.secondData = nil
+	otherNode := twoThreeNode[T]{
+		firstData:   max,
+		secondData:  nil,
+		firstChild:  nil,
+		secondChild: nil,
+		thirdChild:  nil,
+		parent:      parent,
+		comparator:  node.comparator,
+	}
+
+	// reset the node's children's pointers if necessary
+	if node.firstChild != nil {
+		if node.comparator(*node.firstData, *node.firstChild.firstData) < 0 {
+			node.firstChild.parent = &otherNode
+			otherNode.firstChild = node.firstChild
+			node.firstChild = nil
+		}
+	}
+	if node.secondChild != nil {
+		if node.comparator(*node.firstData, *node.secondChild.firstData) < 0 {
+			node.secondChild.parent = &otherNode
+			otherNode.secondChild = node.secondChild
+			node.secondChild = nil
+		}
+	}
+	if node.thirdChild != nil {
+		if node.comparator(*node.firstData, *node.thirdChild.firstData) < 0 {
+			node.thirdChild.parent = &otherNode
+			otherNode.thirdChild = node.thirdChild
+			node.thirdChild = nil
+		}
+	}
+
+	if parent == nil {
+		parent := twoThreeNode[T]{
+			firstData:   mid,
+			secondData:  nil,
+			firstChild:  node,
+			secondChild: &otherNode,
+			thirdChild:  nil,
+			parent:      nil,
+			comparator:  node.comparator,
+		}
+		node.parent = &parent
+		otherNode.parent = &parent
+		if tmpChildNode != nil {
+			var tmpChildParent *twoThreeNode[T]
+			if tmpChildNode.comparator(*tmpChildNode.firstData, *node.parent.firstData) < 0 {
+				// belongs in node
+				tmpChildParent = node
+			} else {
+				// belongs in otherNode
+				tmpChildParent = &otherNode
+			}
+
+			tmpChildNode.parent = node
+			if tmpChildNode.comparator(*tmpChildNode.firstData, *node.firstData) < 0 {
+				tmpChildParent.secondChild = tmpChildParent.firstChild
+				tmpChildParent.firstChild = tmpChildNode
+			} else {
+				tmpChildParent.secondChild = tmpChildNode
+			}
+		}
+		return &parent
+	}
+
+	if tmpChildNode != nil {
+		var tmpChildParent *twoThreeNode[T]
+		if tmpChildNode.comparator(*tmpChildNode.firstData, *node.parent.firstData) < 0 {
+			// belongs in node
+			tmpChildParent = node
+		} else {
+			// belongs in otherNode
+			tmpChildParent = &otherNode
+		}
+
+		tmpChildNode.parent = node
+		if tmpChildNode.comparator(*tmpChildNode.firstData, *node.firstData) < 0 {
+			tmpChildParent.secondChild = tmpChildParent.firstChild
+			tmpChildParent.firstChild = tmpChildNode
+		} else {
+			tmpChildParent.secondChild = tmpChildNode
+		}
+	}
+
+	if finalSplit {
+		if node.parent.firstChild == node {
+			// node is the firstChild of its parent
+			// - set otherNode as the secondChild of the parent and
+			// - set secondChild of node as the thirdChild of the parent
+			parent.thirdChild = parent.secondChild
+			parent.secondChild = &otherNode
+		} else {
+			// node is the secondChild of its parent
+			parent.thirdChild = &otherNode
+			otherNode.parent = parent
+		}
+		return rebalance(parent, *mid, nil)
+	} else {
+		return rebalance(parent, *mid, &otherNode)
+	}
+}
+
 // insertIntoSingleDatumNode inserts a value into a single-datum node.
 // It returns node after inserting the value.
 func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
@@ -197,16 +347,13 @@ func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeN
 // Note that the root of the tree may be modified by this operation.
 // It returns the root node of the tree.
 func Insert[T any](root *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
-	node, err := findLeaf(*root, value)
+	node, err := findLeaf(root, value)
 	if err != nil {
 		goto EXIT_ERROR
 	}
 
-	if datumCount(node) == 1 {
-		insertIntoSingleDatumNode(node, value)
-		return root, nil
-	}
-	return node, nil
+	return rebalance(node, value, nil), nil
+
 EXIT_ERROR:
 	return nil, err
 }
