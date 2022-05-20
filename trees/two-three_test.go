@@ -447,44 +447,6 @@ func Test_sortData(t *testing.T) {
 	}
 }
 
-func Test_insertIntoFullNode(t *testing.T) {
-	leafWithOneAndFive := ttni().setFD(1).setSD(5)
-	leafWithNine := ttni().setFD(9)
-	_ = ttni().setFD(7).setFC(leafWithOneAndFive).setSC(leafWithNine)
-
-	expectedLeafWithFive := ttni().setFD(5)
-	expectedLeafWithOne := ttni().setFD(1)
-	expectedLeafWithNine := ttni().setFD(9)
-	expectedTree := ttni().setFD(4).setSD(7).setFC(expectedLeafWithOne).setSC(expectedLeafWithFive).setTC(expectedLeafWithNine)
-
-	type args struct {
-		value int
-	}
-	tests := []struct {
-		name string
-		args args
-		want *twoThreeNode[int]
-	}{
-		{
-			name: "Inserts the value into the tree",
-			args: args{
-				value: 4,
-			},
-			want: expectedTree,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := insertIntoFullNode(leafWithOneAndFive, tt.args.value)
-			matched, message := bfsEquals(got, expectedTree)
-			if !matched {
-				t.Errorf("insertIntoFullNode() mismatch: %v", message)
-				t.Errorf("got = %v", Print(got))
-			}
-		})
-	}
-}
-
 func TestInsert(t *testing.T) {
 	type args struct {
 		root  *twoThreeNode[int]
@@ -559,54 +521,6 @@ func TestInsert(t *testing.T) {
 
 			if err != nil != tt.wantErr {
 				t.Errorf("Insert() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_sortChildren(t *testing.T) {
-	type args struct {
-		a *twoThreeNode[int]
-		b *twoThreeNode[int]
-		c *twoThreeNode[int]
-		d *twoThreeNode[int]
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  int
-		want1 int
-		want2 int
-		want3 int
-	}{
-		{
-			name: "It sorts the children correctly",
-			args: args{
-				a: ttni().setFD(4),
-				b: ttni().setFD(2),
-				c: ttni().setFD(3),
-				d: ttni().setFD(1),
-			},
-			want:  1,
-			want1: 2,
-			want2: 3,
-			want3: 4,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3 := sortChildren(tt.args.a, tt.args.b, tt.args.c, tt.args.d)
-			if *got.firstData != tt.want {
-				t.Errorf("sortChildren() got = %v, want %v", got.firstData, tt.want)
-			}
-			if *got1.firstData != tt.want1 {
-				t.Errorf("sortChildren() got1 = %v, want %v", got1.firstData, tt.want1)
-			}
-			if *got2.firstData != tt.want2 {
-				t.Errorf("sortChildren() got2 = %v, want %v", got2.firstData, tt.want2)
-			}
-			if *got3.firstData != tt.want3 {
-				t.Errorf("sortChildren() got3 = %v, want %v", got3.firstData, tt.want3)
 			}
 		})
 	}
