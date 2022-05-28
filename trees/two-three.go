@@ -177,6 +177,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 	// - its parent has only one data value
 	node.firstData = min
 	node.secondData = nil
+
 	otherNode := twoThreeNode[T]{
 		firstData:   max,
 		secondData:  nil,
@@ -187,26 +188,27 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 		comparator:  node.comparator,
 	}
 
-	// reset the node's children's pointers if necessary
-	if node.firstChild != nil {
-		if node.comparator(*node.firstData, *node.firstChild.firstData) < 0 {
-			node.firstChild.parent = &otherNode
-			otherNode.firstChild = node.firstChild
-			node.firstChild = nil
+	leftChildren, rightChildren := partitionChildNodes(*mid, []*twoThreeNode[T]{node.firstChild, node.secondChild, node.thirdChild, tmpChildNode})
+
+	node.firstChild = nil
+	node.secondChild = nil
+	node.thirdChild = nil
+
+	for i, child := range leftChildren {
+		child.parent = node
+		if i == 0 {
+			node.firstChild = child
+		} else {
+			node.secondChild = child
 		}
 	}
-	if node.secondChild != nil {
-		if node.comparator(*node.firstData, *node.secondChild.firstData) < 0 {
-			node.secondChild.parent = &otherNode
-			otherNode.secondChild = node.secondChild
-			node.secondChild = nil
-		}
-	}
-	if node.thirdChild != nil {
-		if node.comparator(*node.firstData, *node.thirdChild.firstData) < 0 {
-			node.thirdChild.parent = &otherNode
-			otherNode.thirdChild = node.thirdChild
-			node.thirdChild = nil
+
+	for i, child := range rightChildren {
+		child.parent = &otherNode
+		if i == 0 {
+			otherNode.firstChild = child
+		} else {
+			otherNode.thirdChild = child
 		}
 	}
 
@@ -222,44 +224,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 		}
 		node.parent = &parent
 		otherNode.parent = &parent
-		if tmpChildNode != nil {
-			var tmpChildParent *twoThreeNode[T]
-			if tmpChildNode.comparator(*tmpChildNode.firstData, *node.parent.firstData) < 0 {
-				// belongs in node
-				tmpChildParent = node
-			} else {
-				// belongs in otherNode
-				tmpChildParent = &otherNode
-			}
-
-			tmpChildNode.parent = node
-			if tmpChildNode.comparator(*tmpChildNode.firstData, *node.firstData) < 0 {
-				tmpChildParent.secondChild = tmpChildParent.firstChild
-				tmpChildParent.firstChild = tmpChildNode
-			} else {
-				tmpChildParent.secondChild = tmpChildNode
-			}
-		}
 		return &parent
-	}
-
-	if tmpChildNode != nil {
-		var tmpChildParent *twoThreeNode[T]
-		if tmpChildNode.comparator(*tmpChildNode.firstData, *node.parent.firstData) < 0 {
-			// belongs in node
-			tmpChildParent = node
-		} else {
-			// belongs in otherNode
-			tmpChildParent = &otherNode
-		}
-
-		tmpChildNode.parent = node
-		if tmpChildNode.comparator(*tmpChildNode.firstData, *node.firstData) < 0 {
-			tmpChildParent.secondChild = tmpChildParent.firstChild
-			tmpChildParent.firstChild = tmpChildNode
-		} else {
-			tmpChildParent.secondChild = tmpChildNode
-		}
 	}
 
 	if finalSplit {
@@ -290,6 +255,36 @@ func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeN
 		node.secondData = &value
 	}
 	return node
+}
+
+// partitionChildeNodes partitions the child nodes of a node into two groups based on the mid value given.
+// It returns the two groups.
+func partitionChildNodes[T any](midValue T, childNodes []*twoThreeNode[T]) ([]*twoThreeNode[T], []*twoThreeNode[T]) {
+	var leftChildNodes []*twoThreeNode[T]
+	var rightChildNodes []*twoThreeNode[T]
+
+	appendOrPrepend := func(childNode *twoThreeNode[T], childNodes []*twoThreeNode[T]) []*twoThreeNode[T] {
+		if len(childNodes) == 0 || childNodes[0].comparator(*childNodes[0].firstData, *childNode.firstData) < 0 {
+			childNodes = append(childNodes, childNode)
+		} else {
+			childNodes = append([]*twoThreeNode[T]{childNode}, childNodes...)
+		}
+
+		return childNodes
+	}
+
+	for _, childNode := range childNodes {
+		if childNode == nil {
+			continue
+		}
+		if childNode.comparator(*childNode.firstData, midValue) < 0 {
+			leftChildNodes = appendOrPrepend(childNode, leftChildNodes)
+		} else {
+			rightChildNodes = appendOrPrepend(childNode, rightChildNodes)
+		}
+	}
+
+	return leftChildNodes, rightChildNodes
 }
 
 // Insert inserts a value into the tree.

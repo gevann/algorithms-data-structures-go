@@ -525,3 +525,92 @@ func TestInsert(t *testing.T) {
 		})
 	}
 }
+
+func TestInsertMultiple(t *testing.T) {
+	type args struct {
+		root       *twoThreeNode[int]
+		valuesList []int
+	}
+
+	treeRoot7 := ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))
+	treeRoot17 := ttni().setFD(17).setFC(ttni().setFD(15)).setSC(ttni().setFD(20))
+	treeRoot40 := ttni().setFD(40).setFC(ttni().setFD(35)).setSC(ttni().setFD(45))
+
+	/*
+			            (10, 25)
+			  ----------------------------
+		     /           |               \
+			(7)         (17)             (40)
+			/  \        /  \            /  \
+		(5)    (8)    (15)    (20)    (35)    (45)
+	*/
+	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
+
+	test := struct {
+		name string
+		args args
+		want *twoThreeNode[int]
+	}{
+
+		name: "It correctly inserts multiple values",
+		args: args{
+			root: ttni().setFD(10),
+			valuesList: []int{
+				20, 5, 7, 25, 35, 40, 45, 8, 15, 17,
+			},
+		},
+		want: threeLevelTree,
+	}
+	t.Run(test.name, func(t *testing.T) {
+		root := test.args.root
+
+		for _, value := range test.args.valuesList {
+			root, _ = Insert(root, value)
+		}
+
+		matched, message := bfsEquals(root, test.want)
+
+		if !matched {
+			t.Errorf("Insert() mismatch: %v", message)
+			t.Errorf("\nGOT:%v\n\nWANT:%v\n", Print(root), Print(test.want))
+		}
+	})
+}
+
+func Test_partitionChildNodes(t *testing.T) {
+	type args struct {
+		midValue   int
+		childNodes []*twoThreeNode[int]
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  []*twoThreeNode[int]
+		want1 []*twoThreeNode[int]
+	}{
+		{
+			name: "It partitions the child nodes correctly",
+			args: args{
+				midValue:   5,
+				childNodes: []*twoThreeNode[int]{ttni().setFD(11), ttni().setFD(2), ttni().setFD(7), ttni().setFD(3)},
+			},
+			want:  []*twoThreeNode[int]{ttni().setFD(2), ttni().setFD(3)},
+			want1: []*twoThreeNode[int]{ttni().setFD(7), ttni().setFD(11)},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := partitionChildNodes(tt.args.midValue, tt.args.childNodes)
+			for i, node := range got {
+				if !reflect.DeepEqual(*node.firstData, *tt.want[i].firstData) {
+					t.Errorf("partitionChildNodes() got = %d, want %d", *node.firstData, *tt.want[i].firstData)
+				}
+			}
+			for i, node := range got1 {
+				if !reflect.DeepEqual(*node.firstData, *tt.want1[i].firstData) {
+					t.Errorf("partitionChildNodes() got1 = %d, want %d", *node.firstData, *tt.want1[i].firstData)
+				}
+			}
+		})
+	}
+}
