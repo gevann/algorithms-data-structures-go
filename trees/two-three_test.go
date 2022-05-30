@@ -547,9 +547,10 @@ func TestInsertMultiple(t *testing.T) {
 	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
 
 	test := struct {
-		name string
-		args args
-		want *twoThreeNode[int]
+		name       string
+		args       args
+		want       *twoThreeNode[int]
+		wantHeight int
 	}{
 
 		name: "It correctly inserts multiple values",
@@ -559,7 +560,8 @@ func TestInsertMultiple(t *testing.T) {
 				20, 5, 7, 25, 35, 40, 45, 8, 15, 17,
 			},
 		},
-		want: threeLevelTree,
+		want:       threeLevelTree,
+		wantHeight: 3,
 	}
 	t.Run(test.name, func(t *testing.T) {
 		root := test.args.root
@@ -573,6 +575,12 @@ func TestInsertMultiple(t *testing.T) {
 		if !matched {
 			t.Errorf("Insert() mismatch: %v", message)
 			t.Errorf("\nGOT:%v\n\nWANT:%v\n", Print(root), Print(test.want))
+		}
+
+		matchedHeight := root.height == test.wantHeight
+		if !matchedHeight {
+			t.Errorf("Insert() height mismatch: %v", message)
+			t.Errorf("\nGOT:%v\n\nWANT:%v\n", root.height, test.wantHeight)
 		}
 	})
 }
@@ -610,6 +618,49 @@ func Test_partitionChildNodes(t *testing.T) {
 				if !reflect.DeepEqual(*node.firstData, *tt.want1[i].firstData) {
 					t.Errorf("partitionChildNodes() got1 = %d, want %d", *node.firstData, *tt.want1[i].firstData)
 				}
+			}
+		})
+	}
+}
+
+func Test_maxHeight(t *testing.T) {
+	type args struct {
+		nodes []*twoThreeNode[int]
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "It returns the correct max height",
+			args: args{
+				nodes: []*twoThreeNode[int]{
+					{
+						height: 1,
+					},
+					{
+						height: 2,
+					},
+					{
+						height: 3,
+					},
+				},
+			},
+			want: 3,
+		},
+		{
+			name: "It returns 0 if there are no nodes",
+			args: args{
+				nodes: []*twoThreeNode[int]{},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := maxHeight(tt.args.nodes...); got != tt.want {
+				t.Errorf("maxHeight() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -25,6 +25,9 @@ type twoThreeNode[T any] struct {
 	// comparator is used to compare two values.
 	// returns -1 if a < b, 0 if a == b, 1 if a > b
 	comparator func(T, T) int
+
+	// the height of the tree.
+	height int
 }
 
 // TwoThreeNodeInt is a constructor for a two-three tree with int values.
@@ -38,6 +41,7 @@ func TwoThreeNodeInt(init *int) *twoThreeNode[int] {
 		thirdChild:  nil,
 		parent:      nil,
 		comparator:  intComparator,
+		height:      0,
 	}
 }
 
@@ -152,6 +156,7 @@ func findRoot[T any](node *twoThreeNode[T]) *twoThreeNode[T] {
 	if node.parent == nil {
 		return node
 	}
+	node.height = 1 + maxHeight(node.firstChild, node.secondChild, node.thirdChild)
 	return findRoot(node.parent)
 }
 
@@ -212,6 +217,9 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 		}
 	}
 
+	node.height = 1 + maxHeight(node.firstChild, node.secondChild, node.thirdChild)
+	otherNode.height = 1 + maxHeight(otherNode.firstChild, otherNode.secondChild, otherNode.thirdChild)
+
 	if parent == nil {
 		parent := twoThreeNode[T]{
 			firstData:   mid,
@@ -221,6 +229,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 			thirdChild:  nil,
 			parent:      nil,
 			comparator:  node.comparator,
+			height:      1 + maxHeight(node, &otherNode),
 		}
 		node.parent = &parent
 		otherNode.parent = &parent
@@ -245,6 +254,22 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 	}
 }
 
+func maxHeight[T any](nodes ...*twoThreeNode[T]) int {
+	max := 0
+
+	if len(nodes) == 0 {
+		return max
+	}
+
+	for _, node := range nodes {
+		if node != nil && node.height > max {
+			max = node.height
+		}
+	}
+
+	return max
+}
+
 // insertIntoSingleDatumNode inserts a value into a single-datum node.
 // It returns node after inserting the value.
 func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
@@ -254,6 +279,7 @@ func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeN
 	} else {
 		node.secondData = &value
 	}
+	node.height = maxHeight(node.firstChild, node.secondChild) + 1
 	return node
 }
 
@@ -335,7 +361,7 @@ func ToString[T any](node *twoThreeNode[T]) string {
 	if node.secondData != nil {
 		sd = fmt.Sprintf("%v", *node.secondData)
 	}
-	return fmt.Sprintf("{%v[%v, %v]%v}\t", ref, fd, sd, parentRef)
+	return fmt.Sprintf("{%v[%v, %v] {h: %d} %v}\t", ref, fd, sd, node.height, parentRef)
 }
 
 // Print traverses the tree in breadth-first order.
