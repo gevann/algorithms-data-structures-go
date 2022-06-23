@@ -14,14 +14,14 @@ func TestTwoThreeNode(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *twoThreeNode[int]
+		want *TwoThreeNode[int]
 	}{
 		{
 			name: "Test 1",
 			args: args{
 				init: init,
 			},
-			want: &twoThreeNode[int]{
+			want: &TwoThreeNode[int]{
 				firstData:   init,
 				secondData:  nil,
 				firstChild:  nil,
@@ -47,7 +47,7 @@ func TestTwoThreeNode(t *testing.T) {
 
 func Test_isLeaf(t *testing.T) {
 	type args struct {
-		node twoThreeNode[string]
+		node TwoThreeNode[string]
 	}
 	tests := []struct {
 		name string
@@ -57,7 +57,7 @@ func Test_isLeaf(t *testing.T) {
 		{
 			name: "Returns true when the node has no children.",
 			args: args{
-				node: twoThreeNode[string]{
+				node: TwoThreeNode[string]{
 					firstData:   new(string),
 					secondData:  nil,
 					firstChild:  nil,
@@ -72,10 +72,10 @@ func Test_isLeaf(t *testing.T) {
 		{
 			name: "Returns false when the node has at least one child",
 			args: args{
-				node: twoThreeNode[string]{
+				node: TwoThreeNode[string]{
 					firstData:   new(string),
 					secondData:  nil,
-					firstChild:  &twoThreeNode[string]{},
+					firstChild:  &TwoThreeNode[string]{},
 					secondChild: nil,
 					thirdChild:  nil,
 					parent:      nil,
@@ -95,7 +95,7 @@ func Test_isLeaf(t *testing.T) {
 
 func Test_nodeType(t *testing.T) {
 	type args struct {
-		node twoThreeNode[int]
+		node TwoThreeNode[int]
 	}
 	tests := []struct {
 		name    string
@@ -106,12 +106,12 @@ func Test_nodeType(t *testing.T) {
 		{
 			name: "Returns 3 when the node has three children and two datum.",
 			args: args{
-				node: twoThreeNode[int]{
+				node: TwoThreeNode[int]{
 					firstData:   new(int),
 					secondData:  new(int),
-					firstChild:  &twoThreeNode[int]{},
-					secondChild: &twoThreeNode[int]{},
-					thirdChild:  &twoThreeNode[int]{},
+					firstChild:  &TwoThreeNode[int]{},
+					secondChild: &TwoThreeNode[int]{},
+					thirdChild:  &TwoThreeNode[int]{},
 				},
 			},
 			want:    threeNode,
@@ -120,11 +120,11 @@ func Test_nodeType(t *testing.T) {
 		{
 			name: "Returns 2 when the node has two children and one datum.",
 			args: args{
-				node: twoThreeNode[int]{
+				node: TwoThreeNode[int]{
 					firstData:   new(int),
 					secondData:  nil,
-					firstChild:  &twoThreeNode[int]{},
-					secondChild: &twoThreeNode[int]{},
+					firstChild:  &TwoThreeNode[int]{},
+					secondChild: &TwoThreeNode[int]{},
 					thirdChild:  nil,
 				},
 			},
@@ -134,7 +134,7 @@ func Test_nodeType(t *testing.T) {
 		{
 			name: "Errors when the node is a leaf",
 			args: args{
-				node: twoThreeNode[int]{
+				node: TwoThreeNode[int]{
 					firstData:   new(int),
 					secondData:  nil,
 					firstChild:  nil,
@@ -148,11 +148,11 @@ func Test_nodeType(t *testing.T) {
 		{
 			name: "Errors in all other cases",
 			args: args{
-				node: twoThreeNode[int]{
+				node: TwoThreeNode[int]{
 					firstData:   new(int),
 					secondData:  nil,
 					firstChild:  nil,
-					secondChild: &twoThreeNode[int]{},
+					secondChild: &TwoThreeNode[int]{},
 					thirdChild:  nil,
 				},
 			},
@@ -174,41 +174,41 @@ func Test_nodeType(t *testing.T) {
 	}
 }
 
-func (node *twoThreeNode[int]) setFD(i int) *twoThreeNode[int] {
+func (node *TwoThreeNode[int]) setFD(i int) *TwoThreeNode[int] {
 	node.firstData = &i
 	return node
 }
 
-func (node *twoThreeNode[int]) setSD(i int) *twoThreeNode[int] {
+func (node *TwoThreeNode[int]) setSD(i int) *TwoThreeNode[int] {
 	node.secondData = &i
 	return node
 }
 
-func (node *twoThreeNode[int]) setFC(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *TwoThreeNode[int]) setFC(child *TwoThreeNode[int]) *TwoThreeNode[int] {
 	node.firstChild = child
 	child.parent = node
 	return node
 }
 
-func (node *twoThreeNode[int]) setSC(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *TwoThreeNode[int]) setSC(child *TwoThreeNode[int]) *TwoThreeNode[int] {
 	node.secondChild = child
 	child.parent = node
 	return node
 }
 
-func (node *twoThreeNode[int]) setTC(child *twoThreeNode[int]) *twoThreeNode[int] {
+func (node *TwoThreeNode[int]) setTC(child *TwoThreeNode[int]) *TwoThreeNode[int] {
 	node.thirdChild = child
 	child.parent = node
 	return node
 }
 
-func ttni() *twoThreeNode[int] {
-	return &twoThreeNode[int]{
+func ttni() *TwoThreeNode[int] {
+	return &TwoThreeNode[int]{
 		comparator: intComparator,
 	}
 }
 
-func (node *twoThreeNode[string]) equals(other *twoThreeNode[string]) bool {
+func (node *TwoThreeNode[string]) equals(other *TwoThreeNode[string]) bool {
 	return node.firstData == other.firstData &&
 		node.secondData == other.secondData &&
 		node.firstChild == other.firstChild &&
@@ -216,7 +216,7 @@ func (node *twoThreeNode[string]) equals(other *twoThreeNode[string]) bool {
 		node.thirdChild == other.thirdChild
 }
 
-func bfsEquals(root *twoThreeNode[int], other *twoThreeNode[int]) (bool, string) {
+func bfsEquals(root *TwoThreeNode[int], other *TwoThreeNode[int]) (bool, string) {
 	rootData := bfs(root)
 	otherData := bfs(other)
 
@@ -233,8 +233,8 @@ func bfsEquals(root *twoThreeNode[int], other *twoThreeNode[int]) (bool, string)
 	return true, ""
 }
 
-func bfs(root *twoThreeNode[int]) []int {
-	queue := []*twoThreeNode[int]{root}
+func bfs(root *TwoThreeNode[int]) []int {
+	queue := []*TwoThreeNode[int]{root}
 	var result []int
 	for len(queue) > 0 {
 		node := queue[0]
@@ -253,7 +253,7 @@ func bfs(root *twoThreeNode[int]) []int {
 	return result
 }
 
-func (node *twoThreeNode[int]) toString() string {
+func (node *TwoThreeNode[int]) toString() string {
 	var firstData int
 	var secondData int
 	if node.firstData != nil {
@@ -288,7 +288,7 @@ func Test_findLeaf(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *twoThreeNode[int]
+		want *TwoThreeNode[int]
 	}{
 		{
 			name: "Returns the correct leaf",
@@ -309,7 +309,7 @@ func Test_findLeaf(t *testing.T) {
 
 func Test_datumCount(t *testing.T) {
 	type args struct {
-		node *twoThreeNode[int]
+		node *TwoThreeNode[int]
 	}
 	tests := []struct {
 		name string
@@ -335,13 +335,13 @@ func Test_datumCount(t *testing.T) {
 
 func Test_insertIntoSingleDatumNode(t *testing.T) {
 	type args struct {
-		node  *twoThreeNode[int]
+		node  *TwoThreeNode[int]
 		value int
 	}
 	tests := []struct {
 		name string
 		args args
-		want *twoThreeNode[int]
+		want *TwoThreeNode[int]
 	}{
 		{
 			name: "Inserts the value into the node",
@@ -375,7 +375,7 @@ func Test_insertIntoSingleDatumNode(t *testing.T) {
 
 func Test_sortData(t *testing.T) {
 	type args struct {
-		node  *twoThreeNode[int]
+		node  *TwoThreeNode[int]
 		value int
 	}
 	tests := []struct {
@@ -449,13 +449,13 @@ func Test_sortData(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	type args struct {
-		root  *twoThreeNode[int]
+		root  *TwoThreeNode[int]
 		value int
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *twoThreeNode[int]
+		want    *TwoThreeNode[int]
 		wantErr bool
 	}{
 		{
@@ -528,7 +528,7 @@ func TestInsert(t *testing.T) {
 
 func TestInsertMultiple(t *testing.T) {
 	type args struct {
-		root       *twoThreeNode[int]
+		root       *TwoThreeNode[int]
 		valuesList []int
 	}
 
@@ -549,7 +549,7 @@ func TestInsertMultiple(t *testing.T) {
 	test := struct {
 		name       string
 		args       args
-		want       *twoThreeNode[int]
+		want       *TwoThreeNode[int]
 		wantHeight int
 	}{
 
@@ -588,22 +588,22 @@ func TestInsertMultiple(t *testing.T) {
 func Test_partitionChildNodes(t *testing.T) {
 	type args struct {
 		midValue   int
-		childNodes []*twoThreeNode[int]
+		childNodes []*TwoThreeNode[int]
 	}
 	tests := []struct {
 		name  string
 		args  args
-		want  []*twoThreeNode[int]
-		want1 []*twoThreeNode[int]
+		want  []*TwoThreeNode[int]
+		want1 []*TwoThreeNode[int]
 	}{
 		{
 			name: "It partitions the child nodes correctly",
 			args: args{
 				midValue:   5,
-				childNodes: []*twoThreeNode[int]{ttni().setFD(11), ttni().setFD(2), ttni().setFD(7), ttni().setFD(3)},
+				childNodes: []*TwoThreeNode[int]{ttni().setFD(11), ttni().setFD(2), ttni().setFD(7), ttni().setFD(3)},
 			},
-			want:  []*twoThreeNode[int]{ttni().setFD(2), ttni().setFD(3)},
-			want1: []*twoThreeNode[int]{ttni().setFD(7), ttni().setFD(11)},
+			want:  []*TwoThreeNode[int]{ttni().setFD(2), ttni().setFD(3)},
+			want1: []*TwoThreeNode[int]{ttni().setFD(7), ttni().setFD(11)},
 		},
 	}
 	for _, tt := range tests {
@@ -625,7 +625,7 @@ func Test_partitionChildNodes(t *testing.T) {
 
 func Test_maxHeight(t *testing.T) {
 	type args struct {
-		nodes []*twoThreeNode[int]
+		nodes []*TwoThreeNode[int]
 	}
 	tests := []struct {
 		name string
@@ -635,7 +635,7 @@ func Test_maxHeight(t *testing.T) {
 		{
 			name: "It returns the correct max height",
 			args: args{
-				nodes: []*twoThreeNode[int]{
+				nodes: []*TwoThreeNode[int]{
 					{
 						height: 1,
 					},
@@ -652,7 +652,7 @@ func Test_maxHeight(t *testing.T) {
 		{
 			name: "It returns 0 if there are no nodes",
 			args: args{
-				nodes: []*twoThreeNode[int]{},
+				nodes: []*TwoThreeNode[int]{},
 			},
 			want: 0,
 		},

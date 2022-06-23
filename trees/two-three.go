@@ -12,15 +12,15 @@ import (
 	- three children (aka 3-node) and two data elements
 */
 
-type twoThreeNode[T any] struct {
+type TwoThreeNode[T any] struct {
 	//Each node can have a maximum of two data values.
 	firstData, secondData *T
 
 	//Each node can have a maximum of three children.
-	firstChild, secondChild, thirdChild *twoThreeNode[T]
+	firstChild, secondChild, thirdChild *TwoThreeNode[T]
 
 	//Each node has a parent, except for the root node.
-	parent *twoThreeNode[T]
+	parent *TwoThreeNode[T]
 
 	// comparator is used to compare two values.
 	// returns -1 if a < b, 0 if a == b, 1 if a > b
@@ -32,8 +32,8 @@ type twoThreeNode[T any] struct {
 
 // TwoThreeNodeInt is a constructor for a two-three tree with int values.
 // It returns a root node of a two-three tree.
-func TwoThreeNodeInt(init *int) *twoThreeNode[int] {
-	return &twoThreeNode[int]{
+func TwoThreeNodeInt(init *int) *TwoThreeNode[int] {
+	return &TwoThreeNode[int]{
 		firstData:   init,
 		secondData:  nil,
 		firstChild:  nil,
@@ -65,7 +65,7 @@ func stringComparator(a, b string) int {
 	}
 }
 
-func isLeaf[T any](node twoThreeNode[T]) bool {
+func isLeaf[T any](node TwoThreeNode[T]) bool {
 	return node.firstChild == nil && node.secondChild == nil && node.thirdChild == nil
 }
 
@@ -74,7 +74,7 @@ const (
 	threeNode
 )
 
-func nodeType[T any](node twoThreeNode[T]) (int, error) {
+func nodeType[T any](node TwoThreeNode[T]) (int, error) {
 	var zeroVal int
 	firstChild := node.firstChild != nil
 	secondChild := node.secondChild != nil
@@ -98,7 +98,7 @@ func nodeType[T any](node twoThreeNode[T]) (int, error) {
 // findLeaf locates the leaf node of the given twoThreeTree within which the value should be inserted.
 // It returns the leaf node at which the value should be inserted.
 // If no leaf node exists, it returns nil.
-func findLeaf[T any](node *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
+func findLeaf[T any](node *TwoThreeNode[T], value T) (*TwoThreeNode[T], error) {
 	if isLeaf(*node) {
 		return node, nil
 	}
@@ -130,7 +130,7 @@ func findLeaf[T any](node *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
 }
 
 // datumCount returns the number of data values in the given twoThreeNode.
-func datumCount[T any](node *twoThreeNode[T]) int {
+func datumCount[T any](node *TwoThreeNode[T]) int {
 	count := 0
 	for _, datum := range []*T{node.firstData, node.secondData} {
 		if datum != nil {
@@ -142,7 +142,7 @@ func datumCount[T any](node *twoThreeNode[T]) int {
 
 // sortData returns the data of a node and a given value, sorted in ascending order.
 // It returns the sorted data
-func sortData[T any](node *twoThreeNode[T], value T) (*T, *T, *T) {
+func sortData[T any](node *TwoThreeNode[T], value T) (*T, *T, *T) {
 	if node.comparator(value, *node.firstData) <= 0 {
 		return &value, node.firstData, node.secondData
 	}
@@ -152,7 +152,7 @@ func sortData[T any](node *twoThreeNode[T], value T) (*T, *T, *T) {
 	return node.firstData, node.secondData, &value
 }
 
-func findRoot[T any](node *twoThreeNode[T]) *twoThreeNode[T] {
+func findRoot[T any](node *TwoThreeNode[T]) *TwoThreeNode[T] {
 	if node.parent == nil {
 		return node
 	}
@@ -163,7 +163,7 @@ func findRoot[T any](node *twoThreeNode[T]) *twoThreeNode[T] {
 // rebalance rebalances the tree after a node has been inserted.
 // It recurses up the tree until it finds a node that is not full, or the root node.
 // It returns the new root of the tree.
-func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode[T]) *twoThreeNode[T] {
+func rebalance[T any](node *TwoThreeNode[T], value T, tmpChildNode *TwoThreeNode[T]) *TwoThreeNode[T] {
 	finalSplit := node.parent == nil || datumCount(node.parent) == 1
 
 	if datumCount(node) == 1 {
@@ -183,7 +183,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 	node.firstData = min
 	node.secondData = nil
 
-	otherNode := twoThreeNode[T]{
+	otherNode := TwoThreeNode[T]{
 		firstData:   max,
 		secondData:  nil,
 		firstChild:  nil,
@@ -193,7 +193,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 		comparator:  node.comparator,
 	}
 
-	leftChildren, rightChildren := partitionChildNodes(*mid, []*twoThreeNode[T]{node.firstChild, node.secondChild, node.thirdChild, tmpChildNode})
+	leftChildren, rightChildren := partitionChildNodes(*mid, []*TwoThreeNode[T]{node.firstChild, node.secondChild, node.thirdChild, tmpChildNode})
 
 	node.firstChild = nil
 	node.secondChild = nil
@@ -221,7 +221,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 	otherNode.height = 1 + maxHeight(otherNode.firstChild, otherNode.secondChild, otherNode.thirdChild)
 
 	if parent == nil {
-		parent := twoThreeNode[T]{
+		parent := TwoThreeNode[T]{
 			firstData:   mid,
 			secondData:  nil,
 			firstChild:  node,
@@ -254,7 +254,7 @@ func rebalance[T any](node *twoThreeNode[T], value T, tmpChildNode *twoThreeNode
 	}
 }
 
-func maxHeight[T any](nodes ...*twoThreeNode[T]) int {
+func maxHeight[T any](nodes ...*TwoThreeNode[T]) int {
 	max := 0
 
 	if len(nodes) == 0 {
@@ -272,7 +272,7 @@ func maxHeight[T any](nodes ...*twoThreeNode[T]) int {
 
 // insertIntoSingleDatumNode inserts a value into a single-datum node.
 // It returns node after inserting the value.
-func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeNode[T] {
+func insertIntoSingleDatumNode[T any](node *TwoThreeNode[T], value T) *TwoThreeNode[T] {
 	if node.comparator(value, *node.firstData) < 0 {
 		node.secondData = node.firstData
 		node.firstData = &value
@@ -285,15 +285,15 @@ func insertIntoSingleDatumNode[T any](node *twoThreeNode[T], value T) *twoThreeN
 
 // partitionChildeNodes partitions the child nodes of a node into two groups based on the mid value given.
 // It returns the two groups.
-func partitionChildNodes[T any](midValue T, childNodes []*twoThreeNode[T]) ([]*twoThreeNode[T], []*twoThreeNode[T]) {
-	var leftChildNodes []*twoThreeNode[T]
-	var rightChildNodes []*twoThreeNode[T]
+func partitionChildNodes[T any](midValue T, childNodes []*TwoThreeNode[T]) ([]*TwoThreeNode[T], []*TwoThreeNode[T]) {
+	var leftChildNodes []*TwoThreeNode[T]
+	var rightChildNodes []*TwoThreeNode[T]
 
-	appendOrPrepend := func(childNode *twoThreeNode[T], childNodes []*twoThreeNode[T]) []*twoThreeNode[T] {
+	appendOrPrepend := func(childNode *TwoThreeNode[T], childNodes []*TwoThreeNode[T]) []*TwoThreeNode[T] {
 		if len(childNodes) == 0 || childNodes[0].comparator(*childNodes[0].firstData, *childNode.firstData) < 0 {
 			childNodes = append(childNodes, childNode)
 		} else {
-			childNodes = append([]*twoThreeNode[T]{childNode}, childNodes...)
+			childNodes = append([]*TwoThreeNode[T]{childNode}, childNodes...)
 		}
 
 		return childNodes
@@ -316,7 +316,7 @@ func partitionChildNodes[T any](midValue T, childNodes []*twoThreeNode[T]) ([]*t
 // Insert inserts a value into the tree.
 // Note that the root of the tree may be modified by this operation.
 // It returns the root node of the tree.
-func Insert[T any](root *twoThreeNode[T], value T) (*twoThreeNode[T], error) {
+func Insert[T any](root *TwoThreeNode[T], value T) (*TwoThreeNode[T], error) {
 	node, err := findLeaf(root, value)
 	if err != nil {
 		goto EXIT_ERROR
@@ -329,13 +329,13 @@ EXIT_ERROR:
 }
 
 type queueElement[T any] struct {
-	node  *twoThreeNode[T]
+	node  *TwoThreeNode[T]
 	level int
 }
 
 // reference converts the node's hex-string address to a base 62 string.
 // It returns the base 62 string.
-func reference[T any](node *twoThreeNode[T]) string {
+func reference[T any](node *TwoThreeNode[T]) string {
 	hexAddress := fmt.Sprintf("%p", node)
 	i, _ := strconv.ParseInt(hexAddress[2:], 16, 64)
 	return big.NewInt(i).Text(62)
@@ -344,7 +344,7 @@ func reference[T any](node *twoThreeNode[T]) string {
 // ToString returns a string representation of the given twoThreeNode.
 // It includes the reference to the parent node, if any, and the reference to itself if it is not a leaf.
 // Returns a string where the references are base 62 numbers of the nodes' memory addresses.
-func ToString[T any](node *twoThreeNode[T]) string {
+func ToString[T any](node *TwoThreeNode[T]) string {
 	fd, sd, parentRef, ref := "_", "_", "", ""
 
 	if !isLeaf(*node) {
@@ -366,7 +366,7 @@ func ToString[T any](node *twoThreeNode[T]) string {
 
 // Print traverses the tree in breadth-first order.
 // It returns the string representation of the tree.
-func Print[T any](node *twoThreeNode[T]) string {
+func Print[T any](node *TwoThreeNode[T]) string {
 	var queue []queueElement[T]
 	var str string = "\n0:\t"
 	queue = append(queue, queueElement[T]{node, 0})
