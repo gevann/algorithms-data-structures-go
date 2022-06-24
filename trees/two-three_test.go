@@ -216,7 +216,7 @@ func (node *TwoThreeNode[string]) equals(other *TwoThreeNode[string]) bool {
 		node.thirdChild == other.thirdChild
 }
 
-func bfsEquals(root *TwoThreeNode[int], other *TwoThreeNode[int]) (bool, string) {
+func bfsEquals[T any](root *TwoThreeNode[T], other *TwoThreeNode[T]) (bool, string) {
 	rootData := bfs(root)
 	otherData := bfs(other)
 
@@ -225,17 +225,17 @@ func bfsEquals(root *TwoThreeNode[int], other *TwoThreeNode[int]) (bool, string)
 	}
 
 	for idx, value := range rootData {
-		if otherValue := otherData[idx]; value != otherValue {
-			return false, fmt.Sprintf("Values at index %d don't match: %d != %d", idx, value, otherValue)
+		if otherValue := otherData[idx]; !reflect.DeepEqual(value, otherValue) {
+			return false, fmt.Sprintf("Values at index %d don't match: %v != %v", idx, value, otherValue)
 		}
 	}
 
 	return true, ""
 }
 
-func bfs(root *TwoThreeNode[int]) []int {
-	queue := []*TwoThreeNode[int]{root}
-	var result []int
+func bfs[T any](root *TwoThreeNode[T]) []T {
+	queue := []*TwoThreeNode[T]{root}
+	var result []T
 	for len(queue) > 0 {
 		node := queue[0]
 		queue = queue[1:]
@@ -661,6 +661,64 @@ func Test_maxHeight(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := maxHeight(tt.args.nodes...); got != tt.want {
 				t.Errorf("maxHeight() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNew(t *testing.T) {
+	type testStruct struct {
+		a    string
+		b, c int
+	}
+	type args struct {
+		value      testStruct
+		comparator func(a, b testStruct) int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "It creates a new twoThree tree with the correct type",
+			args: args{
+				value: testStruct{
+					a: "ones",
+					b: 1,
+					c: 2,
+				},
+				comparator: func(a, b testStruct) int {
+					return a.b - b.b
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := New(tt.args.value, tt.args.comparator)
+			insertEntry := testStruct{
+				a: "tens",
+				b: 10,
+				c: 20,
+			}
+
+			got, err := Insert(got, insertEntry)
+
+			if err != nil {
+				t.Errorf("Insert() error = %v", err)
+			}
+
+			want := &TwoThreeNode[testStruct]{
+				comparator: tt.args.comparator,
+				firstData:  &tt.args.value,
+				secondData: &insertEntry,
+			}
+
+			matched, message := bfsEquals(got, want)
+
+			if !matched {
+				t.Errorf("Insert() mismatch: %v", message)
+				t.Errorf("\nGOT:%v\n\nWANT:%v\n", Print(got), Print(want))
 			}
 		})
 	}

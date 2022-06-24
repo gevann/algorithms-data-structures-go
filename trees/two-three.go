@@ -45,6 +45,19 @@ func TwoThreeNodeInt(init *int) *TwoThreeNode[int] {
 	}
 }
 
+func New[T any](value T, comparator func(a, b T) int) *TwoThreeNode[T] {
+	return &TwoThreeNode[T]{
+		firstData:   &value,
+		secondData:  nil,
+		firstChild:  nil,
+		secondChild: nil,
+		thirdChild:  nil,
+		parent:      nil,
+		comparator:  comparator,
+		height:      0,
+	}
+}
+
 func intComparator(a, b int) int {
 	if a < b {
 		return -1
