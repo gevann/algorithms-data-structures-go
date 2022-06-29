@@ -411,3 +411,27 @@ func Print[T any](node *TwoThreeNode[T]) string {
 	}
 	return str
 }
+
+func BFS[T any](root *TwoThreeNode[T]) []T {
+	queue := []*TwoThreeNode[T]{root}
+	var result []T
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		result = append(result, *node.firstData)
+		if node.secondData != nil {
+			result = append(result, *node.secondData)
+		}
+
+		if node.firstChild != nil {
+			queue = append(queue, node.firstChild)
+		}
+		if node.secondChild != nil {
+			queue = append(queue, node.secondChild)
+		}
+		if node.thirdChild != nil {
+			queue = append(queue, node.thirdChild)
+		}
+	}
+	return result
+}

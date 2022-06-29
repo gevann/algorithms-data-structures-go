@@ -217,8 +217,8 @@ func (node *TwoThreeNode[string]) equals(other *TwoThreeNode[string]) bool {
 }
 
 func bfsEquals[T any](root *TwoThreeNode[T], other *TwoThreeNode[T]) (bool, string) {
-	rootData := bfs(root)
-	otherData := bfs(other)
+	rootData := BFS(root)
+	otherData := BFS(other)
 
 	if len(rootData) != len(otherData) {
 		return false, "Lengths don't match"
@@ -231,26 +231,6 @@ func bfsEquals[T any](root *TwoThreeNode[T], other *TwoThreeNode[T]) (bool, stri
 	}
 
 	return true, ""
-}
-
-func bfs[T any](root *TwoThreeNode[T]) []T {
-	queue := []*TwoThreeNode[T]{root}
-	var result []T
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-		result = append(result, *node.firstData)
-		if node.firstChild != nil {
-			queue = append(queue, node.firstChild)
-		}
-		if node.secondChild != nil {
-			queue = append(queue, node.secondChild)
-		}
-		if node.thirdChild != nil {
-			queue = append(queue, node.thirdChild)
-		}
-	}
-	return result
 }
 
 func (node *TwoThreeNode[int]) toString() string {
@@ -719,6 +699,45 @@ func TestNew(t *testing.T) {
 			if !matched {
 				t.Errorf("Insert() mismatch: %v", message)
 				t.Errorf("\nGOT:%v\n\nWANT:%v\n", Print(got), Print(want))
+			}
+		})
+	}
+}
+
+func TestBFS(t *testing.T) {
+	type args struct {
+		root *TwoThreeNode[int]
+	}
+	treeRoot7 := ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))
+	treeRoot17 := ttni().setFD(17).setFC(ttni().setFD(15)).setSC(ttni().setFD(20))
+	treeRoot40 := ttni().setFD(40).setFC(ttni().setFD(35)).setSC(ttni().setFD(45))
+
+	/*
+			            (10, 25)
+			  ----------------------------
+		     /           |               \
+			(7)         (17)             (40)
+			/  \        /  \            /  \
+		(5)    (8)    (15)    (20)    (35)    (45)
+	*/
+	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{
+			name: "It returns the correct BFS traversal",
+			args: args{
+				root: threeLevelTree,
+			},
+			want: []int{10, 25, 7, 17, 40, 5, 8, 15, 20, 35, 45},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := BFS(tt.args.root); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("BFS() = %v, want %v", got, tt.want)
 			}
 		})
 	}
