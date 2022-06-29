@@ -6,6 +6,34 @@ import (
 	"testing"
 )
 
+// buildThreeLevelTree returns a tree with three levels.
+// The contents of the tree are:
+/*
+		            (10, 25)
+		  ----------------------------
+	     /           |               \
+		(7)         (17)             (40)
+		/  \        /  \            /  \
+	(5)    (8)    (15)    (20)    (35)    (45)
+*/
+func buildThreeLevelTree() *TwoThreeNode[int] {
+	treeRoot7 := ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))
+	treeRoot17 := ttni().setFD(17).setFC(ttni().setFD(15)).setSC(ttni().setFD(20))
+	treeRoot40 := ttni().setFD(40).setFC(ttni().setFD(35)).setSC(ttni().setFD(45))
+
+	/*
+			            (10, 25)
+			  ----------------------------
+		     /           |               \
+			(7)         (17)             (40)
+			/  \        /  \            /  \
+		(5)    (8)    (15)    (20)    (35)    (45)
+	*/
+	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
+
+	return threeLevelTree
+}
+
 func TestTwoThreeNode(t *testing.T) {
 	type args struct {
 		init *int
@@ -512,20 +540,6 @@ func TestInsertMultiple(t *testing.T) {
 		valuesList []int
 	}
 
-	treeRoot7 := ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))
-	treeRoot17 := ttni().setFD(17).setFC(ttni().setFD(15)).setSC(ttni().setFD(20))
-	treeRoot40 := ttni().setFD(40).setFC(ttni().setFD(35)).setSC(ttni().setFD(45))
-
-	/*
-			            (10, 25)
-			  ----------------------------
-		     /           |               \
-			(7)         (17)             (40)
-			/  \        /  \            /  \
-		(5)    (8)    (15)    (20)    (35)    (45)
-	*/
-	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
-
 	test := struct {
 		name       string
 		args       args
@@ -540,7 +554,7 @@ func TestInsertMultiple(t *testing.T) {
 				20, 5, 7, 25, 35, 40, 45, 8, 15, 17,
 			},
 		},
-		want:       threeLevelTree,
+		want:       buildThreeLevelTree(),
 		wantHeight: 3,
 	}
 	t.Run(test.name, func(t *testing.T) {
@@ -708,10 +722,6 @@ func TestBFS(t *testing.T) {
 	type args struct {
 		root *TwoThreeNode[int]
 	}
-	treeRoot7 := ttni().setFD(7).setFC(ttni().setFD(5)).setSC(ttni().setFD(8))
-	treeRoot17 := ttni().setFD(17).setFC(ttni().setFD(15)).setSC(ttni().setFD(20))
-	treeRoot40 := ttni().setFD(40).setFC(ttni().setFD(35)).setSC(ttni().setFD(45))
-
 	/*
 			            (10, 25)
 			  ----------------------------
@@ -720,7 +730,7 @@ func TestBFS(t *testing.T) {
 			/  \        /  \            /  \
 		(5)    (8)    (15)    (20)    (35)    (45)
 	*/
-	threeLevelTree := ttni().setFD(10).setSD(25).setFC(treeRoot7).setSC(treeRoot17).setTC(treeRoot40)
+
 	tests := []struct {
 		name string
 		args args
@@ -729,7 +739,7 @@ func TestBFS(t *testing.T) {
 		{
 			name: "It returns the correct BFS traversal",
 			args: args{
-				root: threeLevelTree,
+				root: buildThreeLevelTree(),
 			},
 			want: []int{10, 25, 7, 17, 40, 5, 8, 15, 20, 35, 45},
 		},
@@ -738,6 +748,43 @@ func TestBFS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := BFS(tt.args.root); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BFS() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGet(t *testing.T) {
+	type args struct {
+		node  *TwoThreeNode[int]
+		value int
+	}
+	five := 5
+	tests := []struct {
+		name string
+		args args
+		want *int
+	}{
+		{
+			name: "It returns the correct value",
+			args: args{
+				node:  buildThreeLevelTree(),
+				value: 5,
+			},
+			want: &five,
+		},
+		{
+			name: "It returns nil if the value is not found",
+			args: args{
+				node:  buildThreeLevelTree(),
+				value: 6,
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Get(tt.args.node, tt.args.value); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Get() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -435,3 +435,37 @@ func BFS[T any](root *TwoThreeNode[T]) []T {
 	}
 	return result
 }
+
+func Get[T any](node *TwoThreeNode[T], value T) *T {
+	if node.firstData != nil && node.comparator(value, *node.firstData) == 0 {
+		return node.firstData
+	}
+	if node.secondData != nil && node.comparator(value, *node.secondData) == 0 {
+		return node.secondData
+	}
+
+	nt, err := nodeType(*node)
+
+	if err != nil {
+		return nil
+	}
+
+	switch nt {
+	case twoNode:
+		if node.comparator(value, *node.firstData) < 0 {
+			return Get(node.firstChild, value)
+		} else {
+			return Get(node.secondChild, value)
+		}
+	case threeNode:
+		if node.comparator(value, *node.firstData) < 0 {
+			return Get(node.firstChild, value)
+		} else if node.comparator(value, *node.secondData) < 0 {
+			return Get(node.secondChild, value)
+		} else {
+			return Get(node.thirdChild, value)
+		}
+	}
+
+	return nil
+}
